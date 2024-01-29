@@ -1,0 +1,41 @@
+version: "3.9"
+services:  
+  flask:
+    container_name: flask-dev
+    build: 
+      context: .
+      dockerfile: ${FLASK_DOCKERFILE}
+      target: dev #this is how to target sub-builds within this dockerfile
+    volumes:
+      #hot reloading of flask app here for dev reasons. In production you would remove this
+      - type: bind
+        source: ./app
+        target: /home/python/app
+    env_file:
+      - .env 
+    #flask requires SIGINT to stop not SIGTERM which is the default docker compose signal
+    stop_signal: SIGINT
+    ports:
+      - 5000:5000
+    restart: unless-stopped
+  db:
+    container_name: postgres-dev
+    image: postgres:16-alpine
+    volumes:
+      #Added in case of configuration needs on build time. Place in ./init.sql to add table loading and etc
+      - type: bind
+        source: ./postgres/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+      - type: volume
+        source: postgres_data_dev
+        target: /var/lib/postgresql/data
+    environment: 
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD_DEV}
+      - POSTGRES_DB=${POSTGRES_DB_DEV}
+      - PGPORT=${PGPORT_DEV}
+      - POSTGRES_USER=${POSTGRES_USER_DEV}
+    ports:
+      - ${PGPORT_DEV}:${PGPORT_DEV}
+    restart: on-failure
+volumes:
+  postgres_data_dev

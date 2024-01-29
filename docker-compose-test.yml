@@ -1,0 +1,9 @@
+services:  
+  flask:
+    volumes:
+      - type: bind
+        source: ./tests
+        target: /home/python/tests
+    environment:
+      - PYTHONPATH=/home/python #setting this for pytest
+    command: "pytest -vv" #overriding any commands to run pytestw

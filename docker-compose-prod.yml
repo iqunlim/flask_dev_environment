@@ -1,0 +1,89 @@
+services: 
+  nginx:
+    image: nginx:1.25.3-alpine
+    container_name: nginx
+    ports:
+      - 443:443
+      - 80:80
+    depends_on:
+      - flask
+    volumes:
+      - ./nginx/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    restart: always
+    networks:
+      - frontend
+      - external
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+  flask:
+    container_name: flask-prod
+    depends_on: 
+      - db
+    build: 
+      context: .
+      dockerfile: ${FLASK_DOCKERFILE}
+      target: prod
+    env_file:
+      - .env 
+    stop_signal: SIGINT
+    ports:
+      - 5000:5000
+    networks:
+      - backend
+      - frontend
+    restart: unless-stopped
+  db:
+    container_name: postgres-prod
+    image: postgres:16-alpine
+    volumes:
+      #Added in case of configuration needs on build time. Place in ./init.sql to add table loading and etc
+      - type: bind
+        source: ./postgres/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+    environment: 
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - PGPORT=${PGPORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+    ports:
+      - ${PGPORT}:${PGPORT}
+    restart: on-failure
+    networks:
+      #unable to be connected externally currently. In this project, the psql databse only serves the flask app
+      - backend
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PW}
+    volumes:
+      - type: bind
+        source: ./pgadmin/servers.json
+        target: /pgadmin4/servers.json
+    ports:
+      - 5050:80
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend  
+volumes:
+  postgres_data:
+#network config, setting nginx as the only external way to get to internal applications.
+networks:
+  frontend:
+    driver: bridge
+    internal: true
+  backend:
+    driver: bridge
+    internal: true 
+  external:
+    driver: bridge
