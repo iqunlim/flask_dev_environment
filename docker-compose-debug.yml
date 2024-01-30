@@ -1,8 +1,7 @@
-version: '3.9'
-
+version: "3.9"
 services:
   flask:
-    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m gunicorn -t 120 -w 2 -b 0.0.0.0:5000 'games:create_app()'"]
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m gunicorn -t 120 -w 2 -b 0.0.0.0:5000 'app:create_app()'"]
     ports:
       - 5678:5678
       - 5000:5000

@@ -1,3 +1,4 @@
+version: "3.9"
 services:  
   flask:
     volumes:
@@ -6,4 +7,4 @@ services:
         target: /home/python/tests
     environment:
       - PYTHONPATH=/home/python #setting this for pytest
-    command: "pytest -vv" #overriding any commands to run pytestw
+    command: "pytest -vv" #overriding any commands to run pytest

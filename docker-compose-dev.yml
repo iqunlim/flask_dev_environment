@@ -38,4 +38,4 @@ services:
       - ${PGPORT_DEV}:${PGPORT_DEV}
     restart: on-failure
 volumes:
-  postgres_data_dev
+  postgres_data_dev:
